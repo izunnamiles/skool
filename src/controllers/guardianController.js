@@ -83,9 +83,18 @@ exports.fetchWards = (req, res) => {
   let sql = `SELECT * FROM students where guardian_id = ${req.params.id}`;
   db.query(sql, (err, data) => {
     if (err) throw err
+    let kids = []
+    data.map((ward) => {
+      let array = {
+        name: ward.first_name + ' ' + ward.last_name,
+        email: ward.email,
+        registered_on: new Date(ward.created_at).toLocaleDateString()
+      }
+      kids.push(array)
+    })
     res.json({
       message: 'success',
-      data
+      data: kids
     })
   });
 }

@@ -27,6 +27,7 @@ exports.studentRegister = (req, res) => {
       last_name: student.last_name,
       email: student.email,
       password: student.password,
+      guardian_id : student.guardian,
       created_at: date,
       updated_at: date
     }

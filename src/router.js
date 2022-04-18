@@ -17,5 +17,6 @@ router.post('/student/login', studentController.studentLogin);
 router.get('/guardians', verifyToken, guardianController.fetchGuardians);
 router.post('/guardian/register', guardianController.guardianRegister);
 router.post('/guardian/login', guardianController.guardianLogin);
+router.get('/guardian/:id/wards', guardianController.fetchWards);
 
 module.exports = router
