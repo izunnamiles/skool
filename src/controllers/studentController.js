@@ -1,14 +1,15 @@
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
 const mail = require('../config/mail');
+const util = require('../util');
 
 exports.allStudent = (req, res) => {
   let sql = 'SELECT * FROM students';
-  db.query(sql, (err, posts) => {
+  db.query(sql, (err, data) => {
     if (err) throw err
     res.json({
       message: 'success',
-      posts
+      data
     })
   });
 }
@@ -20,11 +21,14 @@ exports.studentRegister = (req, res) => {
     students = data;
   } 
   students.forEach(student => {
+    let date = util.getDateTime()
     let newUser = {
       first_name: student.first_name,
       last_name: student.last_name,
       email: student.email,
-      password: student.password
+      password: student.password,
+      created_at: date,
+      updated_at: date
     }
     bcrypt.genSalt(10, (err, salt) => {
       bcrypt.hash(newUser.password, salt, (err, hash) => {

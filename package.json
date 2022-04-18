@@ -2,9 +2,10 @@
   "name": "demo",
   "version": "1.0.0",
   "description": "",
-  "main": "server.js",
+  "main": "src/server.js",
   "scripts": {
-    "dev": "npx nodemon server/server.js -w server"
+    "dev": "npx nodemon server/server.js -w server",
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
@@ -18,6 +19,8 @@
     "nodemailer": "^6.7.3"
   },
   "devDependencies": {
-    "nodemon": "^2.0.15"
+    "jest": "^27.5.1",
+    "nodemon": "^2.0.15",
+    "supertest": "^6.2.2"
   }
 }
