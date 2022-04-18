@@ -41,7 +41,7 @@ exports.studentRegister = (req, res) => {
     })
     
   })
-  res.json({
+  res.status(201).json({
     message:'Student registeration successful '
   })
   //   .then(success => {
@@ -79,4 +79,38 @@ exports.studentRegister = (req, res) => {
   //   });
   // });
   
+}
+exports.studentLogin = (req, res) => {
+  let sql = `SELECT * FROM students WHERE email = '${req.body.email}'`;
+  db.query(sql,(err, result) => {
+    if (err) throw err
+    if (Array.isArray(result) && result.length) {
+      let fetchedUser = result[0]
+      bcrypt.compare(req.body.password, fetchedUser.password, function(err, isMatch) {
+        // result == true
+        if (isMatch) {
+          let student = {
+            first_name: fetchedUser.first_name,
+            last_name: fetchedUser.last_name,
+            email: fetchedUser.email
+          }
+          jwt.sign({ student }, 'studentsecretkey', (err, token) => {
+            res.json({
+              token,
+              message: 'Login successful'
+            });
+          })
+        } else {
+          res.json({
+            message: 'Incorrect Login Details'
+          })
+        }
+      });
+    } else {
+      res.json({
+        message: 'Incorrect Login Details',
+      })
+    }
+    
+  })
 }

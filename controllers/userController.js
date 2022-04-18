@@ -56,8 +56,6 @@ exports.login =  (req, res) => {
     
   })
   
-  
-  
 }
 exports.createUser = (req, res) => {
   let newUser = {
