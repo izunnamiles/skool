@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const db = require('../config/db');
 const mail = require('../config/mail');
 const bcrypt = require('bcrypt');
+const { loginValidation } = require('../config/validate');
 
 db.getConnection((err) => {
   if (err) {
@@ -22,7 +23,9 @@ exports.index = (req, res) => {
     }
   })
 }
-exports.login =  (req, res) => {
+exports.login = (req, res) => {
+  const { error } = loginValidation(req.body);
+  if(error) res.status(400).json({message:error.details[0].message})
   let sql = `SELECT * FROM tutors WHERE email = '${req.body.email}'`;
   db.query(sql,(err, result) => {
     if (err) throw err
@@ -73,7 +76,7 @@ exports.createUser = (req, res) => {
         db.query(sql, newUser,(err) => {
           if (err) throw err
           mail(newUser.email,'Account registration','<p>Welcome to our platform</p>')
-          return res.json({
+          return res.status(201).json({
             message:'User registered'
           });
         })

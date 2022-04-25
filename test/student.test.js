@@ -33,3 +33,13 @@ test('can register multiple new student', async () => {
     .send(data)
   .expect(201)
 });
+
+test('validate password for login', async () => {
+  let data = {
+    email: "nduka@oforka.com",
+    password: ""
+  }
+  const response = await request(app).post('/api/v1/student/login')
+    .send(data)
+  .expect(400)
+});

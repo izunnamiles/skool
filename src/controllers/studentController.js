@@ -2,6 +2,7 @@ const db = require('../config/db');
 const bcrypt = require('bcrypt');
 const mail = require('../config/mail');
 const util = require('../util');
+const { loginValidation } = require('../config/validate');
 
 exports.allStudent = (req, res) => {
   let sql = 'SELECT * FROM students';
@@ -86,6 +87,8 @@ exports.studentRegister = (req, res) => {
   
 }
 exports.studentLogin = (req, res) => {
+  const { error } = loginValidation(req.body);
+  if(error) res.status(400).json({message:error.details[0].message})
   let sql = `SELECT * FROM students WHERE email = '${req.body.email}'`;
   db.query(sql,(err, result) => {
     if (err) throw err

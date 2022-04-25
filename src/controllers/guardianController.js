@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
 const mail = require('../config/mail');
+const { loginValidation } = require('../config/validate');
 
 exports.fetchGuardians = (req, res) => {
   let sql = 'SELECT * FROM guardians';
@@ -46,6 +47,8 @@ exports.guardianRegister = (req, res) => {
   })
 }
 exports.guardianLogin = (req, res) => {
+  const { error } = loginValidation(req.body);
+  if(error) res.status(400).json({message:error.details[0].message})
   let sql = `SELECT * FROM guardians WHERE email = '${req.body.email}'`;
   db.query(sql,(err, result) => {
     if (err) throw err
