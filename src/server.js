@@ -4,7 +4,7 @@ const routes = require('./router');
 const { urlencoded } = require('express');
 
 app.use(express.json());
-app.use(urlencoded({ extended:false }))
+app.use(urlencoded({ extended: false }));
 
 app.use('/api/v1', routes);
 

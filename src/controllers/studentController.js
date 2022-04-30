@@ -5,7 +5,7 @@ const util = require('../util');
 const { loginValidation } = require('../config/validate');
 
 exports.allStudent = (req, res) => {
-  let sql = 'SELECT * FROM students';
+  let sql = 'SELECT first_name, last_name, email, created_at FROM students';
   db.query(sql, (err, data) => {
     if (err) throw err
     res.json({

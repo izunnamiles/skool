@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
 const mail = require('../config/mail');
+const util = require('../util');
 const { loginValidation } = require('../config/validate');
 
 exports.fetchGuardians = (req, res) => {
@@ -11,6 +12,24 @@ exports.fetchGuardians = (req, res) => {
       message: 'success',
       data
     })
+  });
+}
+exports.searchGuardians = (req, res) => {
+  let query = `'%${req.query.q}%'`;
+  let sql = `SELECT * FROM guardians WHERE first_name LIKE ${query} OR last_name LIKE ${query}`;
+  db.query(sql, (err, data) => {
+    if (err) throw err
+    if (!data.length) {
+      res.status(404).json({
+        message: 'No record found',
+        data
+      })
+    } else {
+      res.json({
+        message: 'Record fetched',
+        data
+      })
+    }
   });
 }
 exports.guardianRegister = (req, res) => {
@@ -25,7 +44,9 @@ exports.guardianRegister = (req, res) => {
       first_name: guardian.first_name,
       last_name: guardian.last_name,
       email: guardian.email,
-      password: guardian.password
+      password: guardian.password,
+      created_at: util.getDateTime(),
+      updated_at: util.getDateTime(),
     }
     bcrypt.genSalt(10, (err, salt) => {
       bcrypt.hash(newGuardian.password, salt, (err, hash) => {
@@ -69,13 +90,13 @@ exports.guardianLogin = (req, res) => {
             });
           })
         } else {
-          res.json({
+          res.status(400).json({
             message: 'Incorrect Login Details'
           })
         }
       });
     } else {
-      res.json({
+      res.status(400).json({
         message: 'Incorrect Login Details',
       })
     }

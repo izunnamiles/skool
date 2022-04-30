@@ -5,29 +5,10 @@ const bcrypt = require('bcrypt');
 const util = require('../util')
 const { loginValidation, registerValidation } = require('../config/validate');
 
-db.getConnection((err) => {
-  if (err) {
-    throw err
-  } else {
-    console.log('connected')
-  }
-});
-exports.index = (req, res) => {
-  jwt.verify(req.token, 'secretkey', (err, authData) => {
-    if (err) {
-      res.sendStatus(403);
-    } else {
-      res.json({
-        data: 'data',
-        authData
-      });
-    }
-  })
-}
 exports.login = (req, res) => {
   const { error } = loginValidation(req.body);
   if(error) res.status(400).json({message:error.details[0].message})
-  let sql = `SELECT * FROM users WHERE email = '${req.body.email}'`;
+  let sql = `SELECT * FROM tutors WHERE email = '${req.body.email}'`;
   db.query(sql,(err, result) => {
     if (err) throw err
     if (Array.isArray(result) && result.length) {
@@ -40,7 +21,7 @@ exports.login = (req, res) => {
             last_name: fetchedUser.last_name,
             email: fetchedUser.email
           }
-          jwt.sign({ user }, 'secretkey', (err, token) => {
+          jwt.sign({ user }, 'tutorsecret', (err, token) => {
             res.json({
               token,
               message: 'Login successful'
@@ -61,11 +42,10 @@ exports.login = (req, res) => {
   })
   
 }
-exports.createUser = (req, res) => {
+
+exports.registerTutor = (req, res) => {
   const { error } = registerValidation(req.body);
-  if (error) res.status(400).json({
-    message: error.details[0].message.replace(/"([^"]+(?="))"/g, '$1')
-  })
+  if(error) res.status(400).json({message:error.details[0].message})
   let newUser = {
     first_name:req.body.first_name,
     last_name:req.body.last_name,
@@ -79,10 +59,10 @@ exports.createUser = (req, res) => {
         // Store hash in your password DB.
         if(err) throw err
         newUser.password = hash
-        let sql = "INSERT into users SET ?";
+        let sql = "INSERT into tutors SET ?";
         db.query(sql, newUser,(err) => {
           if (err) throw err
-         // mail(newUser.email,'Account registration','<p>Welcome to our platform</p>')
+          mail(newUser.email,'Account registration','<p>Welcome to our platform</p>')
           return res.status(201).json({
             message:'User registered'
           });
@@ -92,8 +72,8 @@ exports.createUser = (req, res) => {
   
 }
 
-exports.users = (req, res) => {
-  let sql = "SELECT first_name, last_name, email, created_at from users";
+exports.tutors = (req, res) => {
+  let sql = "SELECT first_name, last_name, email, created_at from tutors";
   db.query(sql,(err, results) => {
     if (err) throw err
     return res.json({
@@ -102,8 +82,8 @@ exports.users = (req, res) => {
     });
   })
 }
-exports.getUser = (req, res) => {
-  let sql = `SELECT first_name, last_name, email, created_at FROM users WHERE id = ${req.params.id}`;
+exports.getTutor = (req, res) => {
+  let sql = `SELECT first_name, last_name, email, created_at FROM tutors WHERE id = ${req.params.id}`;
   db.query(sql,(err, results) => {
     if (err) throw err
     return res.json({
@@ -113,8 +93,8 @@ exports.getUser = (req, res) => {
   })
 }
 
-exports.updateUser = (req, res) => {
-  let sql = `UPDATE users SET first_name = '${req.body.first_name}',last_name = '${req.body.last_name}' WHERE id = ${req.params.id}`;
+exports.update = (req, res) => {
+  let sql = `UPDATE tutors SET first_name = '${req.body.first_name}',last_name = '${req.body.last_name}' WHERE id = ${req.params.id}`;
   db.query(sql,(err) => {
     if (err) throw err
     return res.json({
