@@ -5,6 +5,14 @@ const bcrypt = require('bcrypt');
 const util = require('../util')
 const { loginValidation, registerValidation } = require('../helpers/validate');
 
+db.getConnection((err) => {
+  if (err) {
+    throw err
+  } else {
+    console.log('connected')
+  }
+});
+
 exports.login = (req, res) => {
   const { error } = loginValidation(req.body);
   if(error) res.status(400).json({message:error.details[0].message})
