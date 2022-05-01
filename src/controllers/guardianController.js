@@ -1,11 +1,11 @@
-const db = require('../config/db');
+const db = require('../helpers/db');
 const bcrypt = require('bcrypt');
-const mail = require('../config/mail');
+const mail = require('../helpers/mail');
 const util = require('../util');
-const { loginValidation } = require('../config/validate');
+const { loginValidation } = require('../helpers/validate');
 
 exports.fetchGuardians = (req, res) => {
-  let sql = 'SELECT * FROM guardians';
+  let sql = 'SELECT id, first_name, last_name, email FROM guardians';
   db.query(sql, (err, data) => {
     if (err) throw err
     res.json({
@@ -16,7 +16,7 @@ exports.fetchGuardians = (req, res) => {
 }
 exports.searchGuardians = (req, res) => {
   let query = `'%${req.query.q}%'`;
-  let sql = `SELECT * FROM guardians WHERE first_name LIKE ${query} OR last_name LIKE ${query}`;
+  let sql = `SELECT id, first_name, last_name, email FROM guardians WHERE first_name LIKE ${query} OR last_name LIKE ${query}`;
   db.query(sql, (err, data) => {
     if (err) throw err
     if (!data.length) {
@@ -104,12 +104,13 @@ exports.guardianLogin = (req, res) => {
   })
 }
 exports.fetchWards = (req, res) => {
-  let sql = `SELECT * FROM students where guardian_id = ${req.params.id}`;
+  let sql = `SELECT id, first_name, last_name, email, created_at FROM students where guardian_id = ${req.params.id}`;
   db.query(sql, (err, data) => {
     if (err) throw err
     let kids = []
     data.map((ward) => {
       let array = {
+        id: ward.id,
         name: ward.first_name + ' ' + ward.last_name,
         email: ward.email,
         registered_on: new Date(ward.created_at).toLocaleDateString()

@@ -1,11 +1,11 @@
-const db = require('../config/db');
+const db = require('../helpers/db');
 const bcrypt = require('bcrypt');
-const mail = require('../config/mail');
+const mail = require('../helpers/mail');
 const util = require('../util');
-const { loginValidation } = require('../config/validate');
+const { loginValidation } = require('../helpers/validate');
 
 exports.allStudent = (req, res) => {
-  let sql = 'SELECT first_name, last_name, email, created_at FROM students';
+  let sql = 'SELECT id, first_name, last_name, email, created_at FROM students';
   db.query(sql, (err, data) => {
     if (err) throw err
     res.json({
@@ -121,4 +121,14 @@ exports.studentLogin = (req, res) => {
     }
     
   })
+}
+exports.fetchWardsGuardian = (req, res) => {
+  let sql = `SELECT id, first_name, last_name, email, created_at FROM guardians where id = ${req.params.id}`;
+  db.query(sql, (err, data) => {
+    if (err) throw err
+    res.json({
+      message: 'success',
+      data
+    })
+  });
 }

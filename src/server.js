@@ -3,6 +3,7 @@ const app = express();
 const routes = require('./router');
 const { urlencoded } = require('express');
 
+
 app.use(express.json());
 app.use(urlencoded({ extended: false }));
 

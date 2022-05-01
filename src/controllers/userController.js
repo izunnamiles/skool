@@ -1,9 +1,11 @@
 const jwt = require('jsonwebtoken');
-const db = require('../config/db');
-const mail = require('../config/mail');
+const db = require('../helpers/db');
+const mail = require('../helpers/mail');
 const bcrypt = require('bcrypt');
 const util = require('../util')
-const { loginValidation, registerValidation } = require('../config/validate');
+const { loginValidation, registerValidation } = require('../helpers/validate');
+const User = require('../models/User');
+const { json } = require('express/lib/response');
 
 db.getConnection((err) => {
   if (err) {
@@ -61,7 +63,7 @@ exports.login = (req, res) => {
   })
   
 }
-exports.createUser = (req, res) => {
+exports.createUser = async (req, res) => {
   const { error } = registerValidation(req.body);
   if (error) res.status(400).json({
     message: error.details[0].message.replace(/"([^"]+(?="))"/g, '$1')
@@ -71,48 +73,55 @@ exports.createUser = (req, res) => {
     last_name:req.body.last_name,
     email: req.body.email,
     password: req.body.password,
-    created_at: util.getDateTime(),
-    updated_at: util.getDateTime(),
   }
-  bcrypt.genSalt(10, (err, salt) => {
-    bcrypt.hash(newUser.password, salt, (err, hash)=> {
-        // Store hash in your password DB.
-        if(err) throw err
-        newUser.password = hash
-      let sql = "INSERT into users SET ?";
-        db.query(sql, newUser,(err) => {
-          if (err) throw err
-          mail(newUser.email,'Account registration','<p>Welcome to our platform</p>')
-          return res.status(201).json({
-            message:'User registered'
-          });
-        })
+  ;
+  if (await User.findOne({ where: { email: newUser.email } })) {
+    res.status(400).json({
+      message: `Email ${newUser.email} is already registered`
     });
+  }
+  //const user = new User(newUser);
+  newUser.password = await bcrypt.hash(newUser.password, 10);
+  await User.create(newUser).catch(err => console.log(err)).then(() =>
+    res.status(201).json({
+      message: 'User registered'
+    })
+  );
+  mail(newUser.email,'Account registration','<p>Welcome to our platform</p>')
+  res.status(201).json({
+    message:'User registered'
   });
+  // bcrypt.genSalt(10, (err, salt) => {
+  //   bcrypt.hash(newUser.password, salt, (err, hash)=> {
+  //       // Store hash in your password DB.
+  //       if(err) throw err
+  //       newUser.password = hash
+  //     let sql = "INSERT into users SET ?";
+  //       db.query(sql, newUser,(err) => {
+  //         if (err) throw err
+  //         mail(newUser.email,'Account registration','<p>Welcome to our platform</p>')
+  //         return res.status(201).json({
+  //           message:'User registered'
+  //         });
+  //       })
+  //   });
+  // });
   
 }
-
-exports.users = (req, res) => {
-  let sql = "SELECT first_name, last_name, email, created_at from users";
-  db.query(sql,(err, results) => {
-    if (err) throw err
-    return res.json({
-      message: 'Records fetched',
-      data: results
-    });
-  })
+exports.users = async (req, res) => {
+  const users = await User.findAll().catch( err => console.log(err));
+  res.json({
+    message: 'Records fetched',
+    data: users
+  });
 }
-exports.getUser = (req, res) => {
-  let sql = `SELECT first_name, last_name, email, created_at FROM users WHERE id = ${req.params.id}`;
-  db.query(sql,(err, results) => {
-    if (err) throw err
-    return res.json({
-      message: 'Records fetched',
-      data: results
-    });
-  })
+exports.finduser = async (req, res) => {
+  const data = await User.findByPk(req.params.id).catch( err => console.log(err));
+  res.json({
+    message: 'Records fetched',
+    data
+  });
 }
-
 exports.updateUser = (req, res) => {
   let sql = `UPDATE users SET first_name = '${req.body.first_name}',last_name = '${req.body.last_name}' WHERE id = ${req.params.id}`;
   db.query(sql,(err) => {

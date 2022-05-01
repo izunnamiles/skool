@@ -1,9 +1,9 @@
 const jwt = require('jsonwebtoken');
-const db = require('../config/db');
-const mail = require('../config/mail');
+const db = require('../helpers/db');
+const mail = require('../helpers/mail');
 const bcrypt = require('bcrypt');
 const util = require('../util')
-const { loginValidation, registerValidation } = require('../config/validate');
+const { loginValidation, registerValidation } = require('../helpers/validate');
 
 exports.login = (req, res) => {
   const { error } = loginValidation(req.body);
@@ -73,7 +73,7 @@ exports.registerTutor = (req, res) => {
 }
 
 exports.tutors = (req, res) => {
-  let sql = "SELECT first_name, last_name, email, created_at from tutors";
+  let sql = "SELECT id, first_name, last_name, email, created_at from tutors";
   db.query(sql,(err, results) => {
     if (err) throw err
     return res.json({
@@ -83,7 +83,7 @@ exports.tutors = (req, res) => {
   })
 }
 exports.getTutor = (req, res) => {
-  let sql = `SELECT first_name, last_name, email, created_at FROM tutors WHERE id = ${req.params.id}`;
+  let sql = `SELECT id, first_name, last_name, email, created_at FROM tutors WHERE id = ${req.params.id}`;
   db.query(sql,(err, results) => {
     if (err) throw err
     return res.json({

@@ -1,6 +1,6 @@
 const express = require('express');
 
-module.exports = (req, res, next) => {
+const verifyToken = (req, res, next) => {
   const bearerHeader = req.headers['authorization'];
   if (typeof bearerHeader !== 'undefined') {
     const bearer = bearerHeader.split(' ');
@@ -13,3 +13,8 @@ module.exports = (req, res, next) => {
     });
   }
 } 
+
+
+module.exports = {
+  verifyToken,
+}
