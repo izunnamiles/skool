@@ -79,10 +79,10 @@ exports.createUser = (req, res) => {
         // Store hash in your password DB.
         if(err) throw err
         newUser.password = hash
-        let sql = "INSERT into users SET ?";
+      let sql = "INSERT into users SET ?";
         db.query(sql, newUser,(err) => {
           if (err) throw err
-         // mail(newUser.email,'Account registration','<p>Welcome to our platform</p>')
+          mail(newUser.email,'Account registration','<p>Welcome to our platform</p>')
           return res.status(201).json({
             message:'User registered'
           });
