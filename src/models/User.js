@@ -14,8 +14,6 @@ module.exports = sequelize.define('User',
     last_name: { type: Sequelize.STRING(255),allowNull: true },
     email: { type: Sequelize.STRING(255),allowNull: true, unique: true },
     password: { type: Sequelize.STRING(255), allowNull: true },
-    created_at: { type: Sequelize.DATE },
-    updated_at: { type: Sequelize.DATE }
   },
   {
     defaultScope: {
@@ -27,6 +25,8 @@ module.exports = sequelize.define('User',
       withHash: { attributes: {}, }
     },
     // freezeTableName: true,
-    timestamps: false
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
   }
 ); 
