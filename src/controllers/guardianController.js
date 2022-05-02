@@ -1,18 +1,16 @@
 const db = require('../helpers/db');
+const Guardian = require('../models/Guardian');
 const bcrypt = require('bcrypt');
 const mail = require('../helpers/mail');
-const util = require('../util');
-const { loginValidation } = require('../helpers/validate');
+const jwt = require('jsonwebtoken');
+const { loginValidation, registerValidation } = require('../helpers/validate');
 
-exports.fetchGuardians = (req, res) => {
-  let sql = 'SELECT id, first_name, last_name, email FROM guardians';
-  db.query(sql, (err, data) => {
-    if (err) throw err
-    res.json({
-      message: 'success',
-      data
-    })
-  });
+exports.guardians = async (req, res) => {
+  const guardians = await Guardian.findAll().catch(err => console.log(err));
+  res.status(200).json({
+    message: 'Record fetched',
+    data: guardians
+  })
 }
 exports.searchGuardians = (req, res) => {
   let query = `'%${req.query.q}%'`;
@@ -32,75 +30,76 @@ exports.searchGuardians = (req, res) => {
     }
   });
 }
-exports.guardianRegister = (req, res) => {
+exports.createGuardian = async (req, res) => {
   let guardians = req.body ;
   if (!Array.isArray(req.body)) {
     let data = [];
     data.push(req.body)
     guardians = data;
   } 
+  const { error } = registerValidation(req.body);
+  if (error) res.status(400).json({
+    message: error.details[0].message.replace(/"([^"]+(?="))"/g, '$1')
+  })
   guardians.forEach(guardian => {
     let newGuardian = {
       first_name: guardian.first_name,
       last_name: guardian.last_name,
       email: guardian.email,
       password: guardian.password,
-      created_at: util.getDateTime(),
-      updated_at: util.getDateTime(),
-    }
-    bcrypt.genSalt(10, (err, salt) => {
-      bcrypt.hash(newGuardian.password, salt, (err, hash) => {
-        // Store hash in your password DB.
-        if (err) throw err
-        newUser.password = hash
-        let sql = "INSERT into guardians SET ?";
-        return db.query(sql, newGuardian, (err,result) => {
-          if (err) throw err
-          mail(newGuardian.email, 'Account registration', '<p>Welcome to our platform</p>')
+    } 
+    newGuardian.password = await bcrypt.hash(newGuardian.password, 10);
+    // bcrypt.genSalt(10, (err, salt) => {
+    //   bcrypt.hash(newGuardian.password, salt, (err, hash) => {
+    //     // Store hash in your password DB.
+    //     if (err) throw err
+    //     newUser.password = hash
+    //     let sql = "INSERT into guardians SET ?";
+    //     return db.query(sql, newGuardian, (err,result) => {
+    //       if (err) throw err
+    //       mail(newGuardian.email, 'Account registration', '<p>Welcome to our platform</p>')
       
-        })
-      });
+    //     })
+    //   });
+    // })
+    newUser.password = await bcrypt.hash(newUser.password, 10);
+  User.create(newUser)
+  .then(() => {
+    mail(newUser.email, 'Account registration', '<p>Welcome to our platform</p>')
+    res.status(201).json({
+      message: 'User registered'
     })
-    
+  })
+  .catch(err => console.log(err));
   })
   res.status(201).json({
     message:'Registration successful '
   })
 }
-exports.guardianLogin = (req, res) => {
+exports.login = async (req, res) => {
   const { error } = loginValidation(req.body);
-  if(error) res.status(400).json({message:error.details[0].message})
-  let sql = `SELECT * FROM guardians WHERE email = '${req.body.email}'`;
-  db.query(sql,(err, result) => {
-    if (err) throw err
-    if (Array.isArray(result) && result.length) {
-      let fetchedGuardian = result[0]
-      bcrypt.compare(req.body.password, fetchedGuardian.password, function(err, isMatch) {
-        // result == true
-        if (isMatch) {
-          let guardian = {
-            first_name: fetchedGuardian.first_name,
-            last_name: fetchedGuardian.last_name,
-            email: fetchedGuardian.email
-          }
-          jwt.sign({ guardian }, 'parentsecretkey', (err, token) => {
-            res.json({
-              token,
-              message: 'Login successful'
-            });
-          })
-        } else {
-          res.status(400).json({
-            message: 'Incorrect Login Details'
-          })
-        }
-      });
-    } else {
-      res.status(400).json({
-        message: 'Incorrect Login Details',
-      })
-    }
-    
+  if (error) res.status(400).json({ message: error.details[0].message.replace(/"([^"]+(?="))"/g, '$1') })
+  const checkEmailExist = await Guardian.findOne({
+    where: { email: req.body.email },
+    attributes: ['email', 'password']
+  }).catch(err => console.log(err));
+  if (checkEmailExist == null) {
+    res.json({
+      message:'Invalid login details'
+    })
+  }
+  const match = await bcrypt.compare(req.body.password, checkEmailExist.password);
+  if (!match)  res.status(422).json({message:"Invalid login details"})
+  let guardian = {
+    first_name: checkEmailExist.first_name,
+    last_name: checkEmailExist.last_name,
+    email: checkEmailExist.email
+  }
+  jwt.sign({ guardian }, 'parentsecretkey', (err, token) => {
+    res.json({
+      token,
+      message: 'Login successful'
+    });
   })
 }
 exports.fetchWards = (req, res) => {

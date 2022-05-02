@@ -16,12 +16,15 @@ module.exports = sequelize.define('Guardian',
   },
   {
     defaultScope: {
-        // exclude password hash by default
-        attributes: { exclude: ['password'] }
+      // exclude password hash by default
+      attributes: { exclude: ['password'] }
     },
     scopes: {
       // include hash with this scope
       withHash: { attributes: {}, }
-    }
+    },
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
   }
 ); 

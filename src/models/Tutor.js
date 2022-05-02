@@ -22,6 +22,9 @@ module.exports = sequelize.define('Tutor',
     scopes: {
       // include hash with this scope
       withHash: { attributes: {}, }
-    }
+    },
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
   }
 ); 
