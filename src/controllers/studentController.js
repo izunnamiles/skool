@@ -5,6 +5,8 @@ const util = require('../util');
 const { loginValidation } = require('../helpers/validate');
 const Student = require('../models/Student');
 const Guardian = require('../models/Guardian');
+const User = require('../models/User');
+const { use } = require('../router');
 
 exports.students =  async (req, res) => {
   const students = await Student.findAll().catch(err => console.log(err))
@@ -28,8 +30,6 @@ exports.studentRegister = (req, res) => {
       email: student.email,
       password: student.password,
       guardian_id : student.guardian,
-      created_at: date,
-      updated_at: date
     }
     bcrypt.genSalt(10, (err, salt) => {
       bcrypt.hash(newUser.password, salt, (err, hash) => {
@@ -50,40 +50,29 @@ exports.studentRegister = (req, res) => {
     message:'Student registeration successful '
   })
 }
-exports.studentLogin = (req, res) => {
+exports.studentLogin = async (req, res) => {
   const { error } = loginValidation(req.body);
-  if(error) res.status(400).json({message:error.details[0].message})
+  if (error) res.status(400).json({ message: error.details[0].message })
+  const checkEmailExist = await Student.findOne({ where: { email: req.body.email }, attributes:['email,password'] })
+    .catch(err => console.log(err));
+  if (checkEmailExist == null) res.json({
+    message: 'Incorrect Login Details'
+  });
   let sql = `SELECT * FROM students WHERE email = '${req.body.email}'`;
-  db.query(sql,(err, result) => {
-    if (err) throw err
-    if (Array.isArray(result) && result.length) {
-      let fetchedUser = result[0]
-      bcrypt.compare(req.body.password, fetchedUser.password, function(err, isMatch) {
-        // result == true
-        if (isMatch) {
-          let student = {
-            first_name: fetchedUser.first_name,
-            last_name: fetchedUser.last_name,
-            email: fetchedUser.email
-          }
-          jwt.sign({ student }, 'studentsecretkey', (err, token) => {
-            res.json({
-              token,
-              message: 'Login successful'
-            });
-          })
-        } else {
-          res.json({
-            message: 'Incorrect Login Details'
-          })
-        }
-      });
-    } else {
-      res.json({
-        message: 'Incorrect Login Details',
-      })
-    }
-    
+  const isMatch = await bcrypt.compare(req.body.password, checkEmailExist.password)
+  if(!isMatch) res.json({
+    message: 'Incorrect Login Details'
+  });
+  let student = {
+    first_name: checkEmailExist.first_name,
+    last_name: checkEmailExist.last_name,
+    email: checkEmailExist.email
+  }
+  jwt.sign({ student }, 'studentsecretkey', (err, token) => {
+    res.json({
+      token,
+      message: 'Login successful'
+    });
   })
 }
 exports.fetchWardsGuardian = async (req, res) => {
