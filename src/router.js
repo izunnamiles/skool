@@ -20,7 +20,7 @@ router.get('/guardians', verifyToken, guardianController.guardians);
 router.post('/guardian/register', guardianController.createGuardian);
 router.post('/guardian/login', guardianController.login);
 router.get('/guardian/:id/wards', guardianController.fetchWards);
-router.post('/tutor/search', guardianController.searchGuardians);
+router.post('/guardian/search', guardianController.searchGuardians);
 router.post('/tutor/login', tutorController.login);
 router.post('/tutor/register', tutorController.registerTutor);
 router.get('/tutors', tutorController.tutors);

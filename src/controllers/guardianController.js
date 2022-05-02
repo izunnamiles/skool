@@ -1,9 +1,10 @@
-const db = require('../helpers/db');
 const Guardian = require('../models/Guardian');
 const bcrypt = require('bcrypt');
 const mail = require('../helpers/mail');
 const jwt = require('jsonwebtoken');
+const { QueryTypes } = require('sequelize');
 const { loginValidation, registerValidation } = require('../helpers/validate');
+const Student = require('../models/Student');
 
 exports.guardians = async (req, res) => {
   const guardians = await Guardian.findAll().catch(err => console.log(err));
@@ -12,23 +13,25 @@ exports.guardians = async (req, res) => {
     data: guardians
   })
 }
-exports.searchGuardians = (req, res) => {
-  let query = `'%${req.query.q}%'`;
-  let sql = `SELECT id, first_name, last_name, email FROM guardians WHERE first_name LIKE ${query} OR last_name LIKE ${query}`;
-  db.query(sql, (err, data) => {
-    if (err) throw err
-    if (!data.length) {
-      res.status(404).json({
-        message: 'No record found',
-        data
-      })
-    } else {
-      res.json({
-        message: 'Record fetched',
-        data
-      })
+exports.searchGuardians = async(req, res) => {
+  let query = `${req.query.q}%`;
+  const search = await sequelize.query(
+    'SELECT id, first_name, last_name, email FROM guardians WHERE first_name LIKE :q OR last_name LIKE :q',
+    {
+      replacements: { q: query },
+      type: QueryTypes.SELECT
     }
-  });
+  ).catch(err => console.log(err));
+  if (search == null) {
+    res.status(404).json({
+      message: 'No record found'
+    });
+  } else {
+    res.json({
+      message: 'Record fetched',
+      data:search
+    });
+  }
 }
 exports.createGuardian = async (req, res) => {
   let guardians = req.body ;
@@ -47,33 +50,26 @@ exports.createGuardian = async (req, res) => {
       last_name: guardian.last_name,
       email: guardian.email,
       password: guardian.password,
-    } 
-    newGuardian.password = await bcrypt.hash(newGuardian.password, 10);
-    // bcrypt.genSalt(10, (err, salt) => {
-    //   bcrypt.hash(newGuardian.password, salt, (err, hash) => {
-    //     // Store hash in your password DB.
-    //     if (err) throw err
-    //     newUser.password = hash
-    //     let sql = "INSERT into guardians SET ?";
-    //     return db.query(sql, newGuardian, (err,result) => {
-    //       if (err) throw err
-    //       mail(newGuardian.email, 'Account registration', '<p>Welcome to our platform</p>')
-      
-    //     })
-    //   });
-    // })
-    newUser.password = await bcrypt.hash(newUser.password, 10);
-  User.create(newUser)
-  .then(() => {
-    mail(newUser.email, 'Account registration', '<p>Welcome to our platform</p>')
-    res.status(201).json({
-      message: 'User registered'
+    }
+    const checkEmailExist = Guardian.findOne({
+      where: { email: req.body.email },
+      attributes: ['email']
+    }).catch(err => console.log(err));
+    if (checkEmailExist !== null) {
+      res.json({
+        message:'Email already exist'
+      })
+    }
+    newGuardian.password = bcrypt.hash(newGuardian.password, 10);
+    
+    User.create(newUser)
+    .then(() => {
+      mail(newUser.email, 'Account registration', '<p>Welcome to our platform</p>')
+      res.status(201).json({
+        message: 'User registered'
+      })
     })
-  })
-  .catch(err => console.log(err));
-  })
-  res.status(201).json({
-    message:'Registration successful '
+    .catch(err => console.log(err));
   })
 }
 exports.login = async (req, res) => {
@@ -102,23 +98,13 @@ exports.login = async (req, res) => {
     });
   })
 }
-exports.fetchWards = (req, res) => {
-  let sql = `SELECT id, first_name, last_name, email, created_at FROM students where guardian_id = ${req.params.id}`;
-  db.query(sql, (err, data) => {
-    if (err) throw err
-    let kids = []
-    data.map((ward) => {
-      let array = {
-        id: ward.id,
-        name: ward.first_name + ' ' + ward.last_name,
-        email: ward.email,
-        registered_on: new Date(ward.created_at).toLocaleDateString()
-      }
-      kids.push(array)
-    })
-    res.json({
-      message: 'success',
-      data: kids
-    })
-  });
+exports.fetchWards = async (req, res) => {
+  Guardian.hasMany(Student,{ as: 'ward' })
+  const tasks = await Guardian.findByPk(req.params.id, { include: 'ward' })
+    .catch(err => console.log(err));
+  
+  res.json({
+    message: 'success',
+    data: tasks.ward
+  })
 }
