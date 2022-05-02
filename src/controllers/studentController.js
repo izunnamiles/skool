@@ -12,14 +12,6 @@ exports.students =  async (req, res) => {
     message: 'success',
     data: students
   })
-  // let sql = 'SELECT id, first_name, last_name, email, created_at FROM students';
-  // db.query(sql, (err, data) => {
-  //   if (err) throw err
-  //   res.json({
-  //     message: 'success',
-  //     data
-  //   })
-  // });
 }
 exports.studentRegister = (req, res) => {
   let students = req.body ;
