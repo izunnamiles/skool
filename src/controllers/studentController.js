@@ -58,7 +58,6 @@ exports.studentLogin = async (req, res) => {
   if (checkEmailExist == null) res.json({
     message: 'Incorrect Login Details'
   });
-  let sql = `SELECT * FROM students WHERE email = '${req.body.email}'`;
   const isMatch = await bcrypt.compare(req.body.password, checkEmailExist.password)
   if(!isMatch) res.json({
     message: 'Incorrect Login Details'
