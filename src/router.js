@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { verifyToken } = require('./helpers/middleware')
+const { verifyToken } = require('./helpers/middleware');
 const userController = require('./controllers/userController');
 const studentController = require('./controllers/studentController');
 const guardianController = require('./controllers/guardianController');
@@ -12,7 +12,7 @@ router.post('/register', userController.createUser);
 router.get('/users', userController.users);
 router.get('/user/:id', userController.finduser);
 router.put('/user/:id', userController.updateUser);
-router.get('/students', verifyToken, studentController.allStudent);
+router.get('/students', verifyToken,studentController.students);
 router.post('/student/register', studentController.studentRegister);
 router.post('/student/login', studentController.studentLogin);
 router.get('/student/:id/guardian', studentController.fetchWardsGuardian);

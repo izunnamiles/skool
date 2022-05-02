@@ -3,16 +3,23 @@ const bcrypt = require('bcrypt');
 const mail = require('../helpers/mail');
 const util = require('../util');
 const { loginValidation } = require('../helpers/validate');
+const Student = require('../models/Student');
+const Guardian = require('../models/Guardian');
 
-exports.allStudent = (req, res) => {
-  let sql = 'SELECT id, first_name, last_name, email, created_at FROM students';
-  db.query(sql, (err, data) => {
-    if (err) throw err
-    res.json({
-      message: 'success',
-      data
-    })
-  });
+exports.students =  async (req, res) => {
+  const students = await Student.findAll().catch(err => console.log(err))
+  res.json({
+    message: 'success',
+    data: students
+  })
+  // let sql = 'SELECT id, first_name, last_name, email, created_at FROM students';
+  // db.query(sql, (err, data) => {
+  //   if (err) throw err
+  //   res.json({
+  //     message: 'success',
+  //     data
+  //   })
+  // });
 }
 exports.studentRegister = (req, res) => {
   let students = req.body ;
@@ -50,41 +57,6 @@ exports.studentRegister = (req, res) => {
   res.status(201).json({
     message:'Student registeration successful '
   })
-  //   .then(success => {
-  //     res.json({
-  //       message: 'Student registeration successful '+success 
-  //     });
-  //   }, (err) => {
-  //     res.json({
-  //       message: 'Student registeration failed' + err
-  //     })
-  //   }
-  // ).catch( err => {
-  //   console.log(err)
-  // });
-  
-  // let newUser = {
-  //   first_name:req.body.first_name,
-  //   last_name:req.body.last_name,
-  //   email: req.body.email,
-  //   password:req.body.password
-  // }
-  // bcrypt.genSalt(10, (err, salt) => {
-  //   bcrypt.hash(newUser.password, salt, (err, hash)=> {
-  //       // Store hash in your password DB.
-  //       if(err) throw err
-  //       newUser.password = hash
-  //       let sql = "INSERT into students SET ?";
-  //       db.query(sql, newUser,(err) => {
-  //         if (err) throw err
-  //         // mail(newUser.email,'Account registration','<p>Welcome to our platform</p>')
-  //         return res.json({
-  //           message:'User registered'
-  //         });
-  //       })
-  //   });
-  // });
-  
 }
 exports.studentLogin = (req, res) => {
   const { error } = loginValidation(req.body);
@@ -122,13 +94,12 @@ exports.studentLogin = (req, res) => {
     
   })
 }
-exports.fetchWardsGuardian = (req, res) => {
-  let sql = `SELECT id, first_name, last_name, email, created_at FROM guardians where id = ${req.params.id}`;
-  db.query(sql, (err, data) => {
-    if (err) throw err
-    res.json({
-      message: 'success',
-      data
-    })
-  });
+exports.fetchWardsGuardian = async (req, res) => {
+  Student.belongsTo(Guardian, { as: 'guardian' });
+  const student = await Student.findByPk(req.params.id, {include: 'guardian'})
+    .catch(err => console.log(err));
+  res.json({
+    message: 'success',
+    data: student.guardian
+  })
 }
