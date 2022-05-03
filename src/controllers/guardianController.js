@@ -33,17 +33,14 @@ exports.searchGuardians = async(req, res) => {
     });
   }
 }
-exports.createGuardian = async (req, res) => {
+exports.createGuardian = (req, res) => {
   let guardians = req.body ;
   if (!Array.isArray(req.body)) {
     let data = [];
     data.push(req.body)
     guardians = data;
   } 
-  const { error } = registerValidation(req.body);
-  if (error) res.status(400).json({
-    message: error.details[0].message.replace(/"([^"]+(?="))"/g, '$1')
-  })
+ 
   guardians.forEach(guardian => {
     let newGuardian = {
       first_name: guardian.first_name,
@@ -51,6 +48,10 @@ exports.createGuardian = async (req, res) => {
       email: guardian.email,
       password: guardian.password,
     }
+    const { error } = registerValidation(newGuardian);
+    if (error) res.status(400).json({
+      message: error.details[0].message.replace(/"([^"]+(?="))"/g, '$1')
+    })
     const checkEmailExist = Guardian.findOne({
       where: { email: req.body.email },
       attributes: ['email']
@@ -62,7 +63,7 @@ exports.createGuardian = async (req, res) => {
     }
     newGuardian.password = bcrypt.hash(newGuardian.password, 10);
     
-    await Guardian.create(newGuardian)
+    Guardian.create(newGuardian)
     .then(() => {
       mail(newGuardian.email, 'Account registration', '<p>Welcome to our platform</p>')
       res.status(201).json({

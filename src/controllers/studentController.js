@@ -36,7 +36,7 @@ exports.studentRegister = (req, res) => {
       })
     }
     newStudent.password = bcrypt.hash(newStudent.password, 10);
-    await Student.create(newStudent)
+    Student.create(newStudent)
     .then(() => {
       mail(newStudent.email, 'Account registration', '<p>Welcome to our platform</p>')
       res.status(201).json({

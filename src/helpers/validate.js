@@ -51,6 +51,20 @@ const updateValidtion = (data) => {
   })
   return schema.validate(data)
 }
+const validateDept = (data) => {
+  const schema = Joi.object({
+    name: Joi.string()
+        .min(3)
+        .max(30)
+        .required(),
+    description: Joi.string()
+        .min(3)
+        .max(100)
+        .required(),
+  })
+  return schema.validate(data)
+}
+module.exports.validateDeptInput = validateDept;
 module.exports.registerValidation = registerValidation;
 module.exports.loginValidation = loginValidation;
 module.exports.updateValidtion = updateValidtion;

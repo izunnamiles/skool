@@ -5,6 +5,7 @@ const userController = require('./controllers/userController');
 const studentController = require('./controllers/studentController');
 const guardianController = require('./controllers/guardianController');
 const tutorController = require('./controllers/tutorController');
+const departmentController = require('./controllers/departmentController');
 
 router.get('/', verifyToken, userController.index);
 router.post('/login', userController.login);
@@ -26,5 +27,10 @@ router.post('/tutor/register', tutorController.registerTutor);
 router.get('/tutors', tutorController.tutors);
 router.get('/tutor/:id', tutorController.getTutor);
 router.put('/tutor/:id', tutorController.update);
+router.get('/departments', departmentController.departments);
+router.post('/department/create', departmentController.createDepartment);
+router.get('/department/:id', departmentController.findDepartment);
+router.post('/department/search', departmentController.searchDepartment);
+router.put('/department/:id', departmentController.update);
 
 module.exports = router
