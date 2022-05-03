@@ -1,12 +1,8 @@
-const db = require('../helpers/db');
 const bcrypt = require('bcrypt');
 const mail = require('../helpers/mail');
-const util = require('../util');
 const { loginValidation } = require('../helpers/validate');
 const Student = require('../models/Student');
 const Guardian = require('../models/Guardian');
-const User = require('../models/User');
-const { use } = require('../router');
 
 exports.students =  async (req, res) => {
   const students = await Student.findAll().catch(err => console.log(err))
@@ -23,39 +19,39 @@ exports.studentRegister = (req, res) => {
     students = data;
   } 
   students.forEach(student => {
-    let date = util.getDateTime()
-    let newUser = {
+    let newStudent = {
       first_name: student.first_name,
       last_name: student.last_name,
       email: student.email,
       password: student.password,
       guardian_id : student.guardian,
     }
-    bcrypt.genSalt(10, (err, salt) => {
-      bcrypt.hash(newUser.password, salt, (err, hash) => {
-        // Store hash in your password DB.
-        if (err) throw err
-        newUser.password = hash
-        let sql = "INSERT into students SET ?";
-        return db.query(sql, newUser, (err,result) => {
-          if (err) throw err
-          mail(newUser.email, 'Account registration', '<p>Welcome to our platform</p>')
-      
-        })
-      });
+    const checkEmailExist = Student.findOne({
+      where: { email: req.body.email },
+      attributes: ['email']
+    }).catch(err => console.log(err));
+    if (checkEmailExist !== null) {
+      res.status(422).json({
+        message:'Email already exist'
+      })
+    }
+    newStudent.password = bcrypt.hash(newStudent.password, 10);
+    await Student.create(newStudent)
+    .then(() => {
+      mail(newStudent.email, 'Account registration', '<p>Welcome to our platform</p>')
+      res.status(201).json({
+        message: 'Student registeration successful'
+      })
     })
-    
-  })
-  res.status(201).json({
-    message:'Student registeration successful '
+    .catch(err => console.log(err));
   })
 }
 exports.studentLogin = async (req, res) => {
   const { error } = loginValidation(req.body);
-  if (error) res.status(400).json({ message: error.details[0].message })
+  if (error) res.status(422).json({ message: error.details[0].message.replace(/"([^"]+(?="))"/g, '$1') })
   const checkEmailExist = await Student.findOne({ where: { email: req.body.email }, attributes:['email,password'] })
     .catch(err => console.log(err));
-  if (checkEmailExist == null) res.json({
+  if (checkEmailExist == null) res.status(422).json({
     message: 'Incorrect Login Details'
   });
   const isMatch = await bcrypt.compare(req.body.password, checkEmailExist.password)

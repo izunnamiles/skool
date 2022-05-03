@@ -62,9 +62,9 @@ exports.createGuardian = async (req, res) => {
     }
     newGuardian.password = bcrypt.hash(newGuardian.password, 10);
     
-    User.create(newUser)
+    await Guardian.create(newGuardian)
     .then(() => {
-      mail(newUser.email, 'Account registration', '<p>Welcome to our platform</p>')
+      mail(newGuardian.email, 'Account registration', '<p>Welcome to our platform</p>')
       res.status(201).json({
         message: 'User registered'
       })

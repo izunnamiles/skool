@@ -1,112 +1,106 @@
 const jwt = require('jsonwebtoken');
-const db = require('../helpers/db');
 const mail = require('../helpers/mail');
 const bcrypt = require('bcrypt');
-const util = require('../util')
 const { loginValidation, registerValidation } = require('../helpers/validate');
+const Tutor = require('../models/Tutor');
 
-db.getConnection((err) => {
-  if (err) {
-    throw err
-  } else {
-    console.log('connected')
-  }
-});
-
-exports.login = (req, res) => {
+exports.login = async(req, res) => {
   const { error } = loginValidation(req.body);
-  if(error) res.status(400).json({message:error.details[0].message})
-  let sql = `SELECT * FROM tutors WHERE email = '${req.body.email}'`;
-  db.query(sql,(err, result) => {
-    if (err) throw err
-    if (Array.isArray(result) && result.length) {
-      let fetchedUser = result[0]
-      bcrypt.compare(req.body.password, fetchedUser.password, function(err, isMatch) {
-        // result == true
-        if (isMatch) {
-          let user = {
-            first_name: fetchedUser.first_name,
-            last_name: fetchedUser.last_name,
-            email: fetchedUser.email
-          }
-          jwt.sign({ user }, 'tutorsecret', (err, token) => {
-            res.json({
-              token,
-              message: 'Login successful'
-            });
-          })
-        } else {
-          res.json({
-            message: 'Incorrect Login Details'
-          })
-        }
-      });
-    } else {
-      res.json({
-        message: 'Incorrect Login Details',
-      })
-    }
-    
+  if (error) res.status(422).json({ message: error.details[0].message.replace(/"([^"]+(?="))"/g, '$1') })
+  const checkEmailExist = await Tutor.findOne({ where: { email: req.body.email }, attributes:['email,password'] })
+    .catch(err => console.log(err));
+  if (checkEmailExist == null) res.status(422).json({
+    message: 'Incorrect Login Details'
+  });
+  const isMatch = await bcrypt.compare(req.body.password, checkEmailExist.password)
+  if(!isMatch) res.json({
+    message: 'Incorrect Login Details'
+  });
+  let tutor = {
+    first_name: checkEmailExist.first_name,
+    last_name: checkEmailExist.last_name,
+    email: checkEmailExist.email
+  }
+  jwt.sign({ tutor }, 'teachersecretkey', (err, token) => {
+    res.json({
+      token,
+      message: 'Login successful'
+    });
   })
   
 }
 
-exports.registerTutor = (req, res) => {
+exports.registerTutor = async (req, res) => {
   const { error } = registerValidation(req.body);
-  if(error) res.status(400).json({message:error.details[0].message})
-  let newUser = {
+  if (error) res.status(400).json({
+    message: error.details[0].message.replace(/"([^"]+(?="))"/g, '$1')
+  })
+  let newTutor = {
     first_name:req.body.first_name,
     last_name:req.body.last_name,
     email: req.body.email,
     password: req.body.password,
-    created_at: util.getDateTime(),
-    updated_at: util.getDateTime(),
   }
-  bcrypt.genSalt(10, (err, salt) => {
-    bcrypt.hash(newUser.password, salt, (err, hash)=> {
-        // Store hash in your password DB.
-        if(err) throw err
-        newUser.password = hash
-        let sql = "INSERT into tutors SET ?";
-        db.query(sql, newUser,(err) => {
-          if (err) throw err
-          mail(newUser.email,'Account registration','<p>Welcome to our platform</p>')
-          return res.status(201).json({
-            message:'User registered'
-          });
-        })
-    });
+  const tutor = await Tutor.findOne({ where: { email: newTutor.email } }).catch(err => console.log(err));
+  if (tutor !== null) {
+    res.status(400).json({ message: 'Email exists' });
+  }
+  newTutor.password = await bcrypt.hash(newTutor.password, 10);
+  await Tutor.create(newTutor)
+  .then(() => {
+    mail(newTutor.email, 'Account registration', '<p>Welcome to our platform</p>')
+    res.status(201).json({
+      message: 'User registered'
+    })
+  })
+  .catch(err => console.log(err));
+}
+
+exports.tutors = async (req, res) => {
+  const tutors = await Tutor.findAll().catch(err => console.log(err));
+  res.status(200).json({
+    message: 'Record fetched',
+    data: tutors
+  })
+}
+
+exports.getTutor = async (req, res) => {
+  const data = await Tutor.findByPk(req.params.id).catch( err => console.log(err));
+  res.json({
+    message: 'Records fetched',
+    data
   });
-  
 }
 
-exports.tutors = (req, res) => {
-  let sql = "SELECT id, first_name, last_name, email, created_at from tutors";
-  db.query(sql,(err, results) => {
-    if (err) throw err
-    return res.json({
-      message: 'Records fetched',
-      data: results
-    });
+exports.update = async (req, res) => {
+  const tutor = await Tutor.findByPk(req.params.id)
+  .catch(err => console.log(err));
+  if (tutor === null) {
+    res.status(422).json({ message: 'tutor does not exist'});
+  }
+  const updateRocrd = {
+    first_name:req.body.first_name ? req.body.first_name : tutor.first_name,
+    last_name:req.body.last_name ? req.body.last_name : tutor.last_name,
+    email: req.body.email? req.body.email : tutor.email,
+  }
+  const { error, value } = updateValidtion(updateRocrd);
+  if (error) res.status(422).json({
+    message: error.details[0].message.replace(/"([^"]+(?="))"/g, '$1')
   })
-}
-exports.getTutor = (req, res) => {
-  let sql = `SELECT id, first_name, last_name, email, created_at FROM tutors WHERE id = ${req.params.id}`;
-  db.query(sql,(err, results) => {
-    if (err) throw err
-    return res.json({
-      message: 'Records fetched',
-      data: results
-    });
-  })
-}
+  const newMail = req.body.email && tutor.email !== req.body.email;
+  const checkEmailExist = await Tutor.findOne({
+    where: { email: req.body.email }
+  }).catch(err => console.log(err));
+  if (checkEmailExist !== null &&  newMail) {
+    res.status(422).json({ message: 'User does not exist'});
+  }
 
-exports.update = (req, res) => {
-  let sql = `UPDATE tutors SET first_name = '${req.body.first_name}',last_name = '${req.body.last_name}' WHERE id = ${req.params.id}`;
-  db.query(sql,(err) => {
-    if (err) throw err
-    return res.json({
-      message: 'Records updated',
-    });
+  Object.assign(tutor, value);
+  await tutor.save()
+  .then(() => {
+    res.json({
+      message: "Record updated"
+    })
   })
+  .catch(err => console.log(err));
 }
