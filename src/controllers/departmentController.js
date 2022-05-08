@@ -86,3 +86,6 @@ exports.update = async (req, res) => {
   })
   .catch(err => console.log(err));
 }
+exports.getDeptTutors = (req, res) => {
+  //
+}
