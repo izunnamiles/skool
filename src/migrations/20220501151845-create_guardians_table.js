@@ -1,6 +1,5 @@
 'use strict';
 
-const Student = require("../models/Student");
 
 module.exports = {
   async up (queryInterface, Sequelize) {
@@ -24,4 +23,3 @@ module.exports = {
     await queryInterface.dropTable('guardians');
   }
 };
-this.hasMany(Student, {as: "ward", foreignKey: 'guardian_id'})

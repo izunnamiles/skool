@@ -6,5 +6,8 @@ const sequelize = new Sequelize(process.env.DB_DATABASE, process.env.DB_USERNAME
   dialect: 'mysql',
 });
 
+// sequelize.sync().then(() => {
+//   console.log('synced')
+// }).catch(err => console.log(err))
 module.exports = sequelize;
 global.sequelize = sequelize;
